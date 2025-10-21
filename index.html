@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expensify - Smart Expense Management</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['PT Sans', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Noto Sans', 'sans-serif']
+                    },
+                    colors: {
+                        custom: {
+                            'background': 'hsl(210, 10%, 15%)',
+                            'card': 'hsl(210, 10%, 18%)', 
+                            'primary': 'hsl(210, 45%, 60%)',
+                            'secondary': 'hsl(210, 10%, 25%)',
+                            'muted': 'hsl(210, 10%, 25%)',
+                            'border': 'hsl(210, 10%, 30%)',
+                            'input': 'hsl(210, 10%, 28%)',
+                            'foreground': 'hsl(210, 10%, 85%)'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Dark Mode Variables */
+        :root {
+            --bg-primary: hsl(210, 10%, 15%);
+            --bg-secondary: hsl(210, 10%, 18%);
+            --bg-tertiary: hsl(210, 10%, 25%);
+            --text-primary: hsl(210, 10%, 85%);
+            --text-secondary: hsl(210, 10%, 70%);
+            --border-color: hsl(210, 10%, 30%);
+            --accent-color: hsl(210, 45%, 60%);
+            --card-shadow: rgba(0, 0, 0, 0.5);
+        }
+
+        /* Light Mode Variables */
+        :root.light-mode {
+            --bg-primary: hsl(0, 0%, 98%);
+            --bg-secondary: hsl(0, 0%, 100%);
+            --bg-tertiary: hsl(210, 20%, 95%);
+            --text-primary: hsl(210, 10%, 15%);
+            --text-secondary: hsl(210, 10%, 35%);
+            --border-color: hsl(210, 15%, 85%);
+            --accent-color: hsl(210, 45%, 50%);
+            --card-shadow: rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'PT Sans', ui-sans-serif, system-ui, sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        @keyframes float-in {
+            0% { opacity: 0; transform: translateY(-10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .animate-float-in { animation: float-in 0.3s ease forwards; }
+
+        @keyframes float-out {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-10px); }
+        }
+        .animate-float-out { animation: float-out 0.3s ease forwards; }
+
+        @keyframes border-glow {
+            0% { border-color: hsla(210, 45%, 60%, 0.3); }
+            50% { border-color: hsla(210, 45%, 60%, 0.8); }
+            100% { border-color: hsla(210, 45%, 60%, 0.3); }
+        }
+        .animate-border-glow {
+            border-width: 2px;
+            border-style: solid;
+            border-color: hsla(210, 45%, 60%, 0.3);
+            animation: border-glow 5s infinite;
+        }
+
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            box-shadow: 0 10px 30px var(--card-shadow);
+        }
+
+        /* Navigation Links */
+        .nav-link {
+            transition: all 0.2s ease;
+        }
+        .nav-link:hover {
+            background-color: var(--bg-tertiary) !important;
+            color: var(--accent-color) !important;
+        }
+
+        .input-field {
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+        }
+        .input-field:hover {
+            opacity: 0.9;
+        }
+        .input-field:focus-within {
+            ring: 1px solid hsl(210, 45%, 60%);
+        }
+    </style>
+</head>
+<body class="font-sans min-h-screen" style="background-color: var(--bg-primary);">
+    <!-- ShadCN-inspired Sidebar -->
+    <aside class="fixed top-0 left-0 h-screen w-64 z-50 flex flex-col items-start pt-4 pb-6 px-4 shadow-lg animate-border-glow" style="background-color: var(--bg-secondary); border-right: 1px solid var(--border-color); transition: all 0.3s ease;">
+        <div class="mb-8 flex items-center gap-3 pl-3">
+            <div class="w-12 h-12 rounded-lg flex items-center justify-center" style="background-color: var(--accent-color);">
+                <i data-lucide="indian-rupee" class="w-6 h-6" style="color: var(--text-primary);"></i>
+            </div>
+            <span class="text-xl font-semibold tracking-tight" style="color: var(--text-primary);">Expensify</span>
+        </div>
+        <nav class="flex flex-col gap-1 w-full">
+            <a href="#" class="flex items-center gap-3 font-medium py-2.5 px-3 rounded-lg transition-all group nav-link" style="color: var(--text-primary);">
+                <i data-lucide="home" class="w-5 h-5"></i> <span>Dashboard</span>
+            </a>
+            <a href="#" class="flex items-center gap-3 font-medium py-2.5 px-3 rounded-lg transition-all group nav-link" style="color: var(--text-primary);">
+                <i data-lucide="credit-card" class="w-5 h-5"></i> <span>Expenses</span>
+            </a>
+            <a href="#" class="flex items-center gap-3 font-medium py-2.5 px-3 rounded-lg transition-all group nav-link" style="color: var(--text-primary);">
+                <i data-lucide="check-circle" class="w-5 h-5"></i> <span>Approvals</span>
+            </a>
+            <a href="#" class="flex items-center gap-3 font-medium py-2.5 px-3 rounded-lg transition-all group nav-link" style="color: var(--text-primary);">
+                <i data-lucide="bar-chart" class="w-5 h-5"></i> <span>Analytics</span>
+            </a>
+            <a href="#" class="flex items-center gap-3 font-medium py-2.5 px-3 rounded-lg transition-all group nav-link" style="color: var(--text-primary);">
+                <i data-lucide="user" class="w-5 h-5"></i> <span>Profile</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Top Bar -->
+    <div class="fixed top-0 left-64 right-0 h-14 flex items-center justify-between px-8 z-40" style="background-color: var(--bg-secondary); border-bottom: 1px solid var(--border-color); transition: all 0.3s ease;">
+        <!-- Header with branding -->
+        <div class="text-lg font-semibold tracking-tight" style="color: var(--text-primary);">Smart Expense Tracker</div>
+        <div class="flex items-center gap-4">
+            <!-- Dark Mode Toggle -->
+            <button id="theme-toggle" onclick="toggleTheme()" class="p-2 rounded-lg transition-all duration-300 hover:bg-white/10" style="color: var(--text-primary);" title="Toggle Dark/Light Mode">
+                <i id="theme-icon" data-lucide="moon" class="w-5 h-5"></i>
+            </button>
+            <div id="user-bar" class="flex items-center gap-4"></div>
+        </div>
+    </div>
+
+    <!-- Login/Signup Modal -->
+    <!-- Unified Login Page -->
+    <div id="unified-login-page" class="fixed inset-0 flex items-center justify-center z-50" style="background: linear-gradient(135deg, hsl(210, 15%, 12%) 0%, hsl(210, 20%, 18%) 50%, hsl(210, 15%, 12%) 100%);">
+        <div class="rounded-lg p-8 m-4 max-w-2xl w-full" style="background-color: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 mx-auto rounded-lg flex items-center justify-center mb-4" style="background: linear-gradient(135deg, hsl(210, 45%, 60%) 0%, hsl(210, 50%, 70%) 100%); box-shadow: 0 10px 40px rgba(100, 150, 200, 0.3);">
+                    <i data-lucide="sparkles" class="w-8 h-8" style="color: var(--text-primary);"></i>
+                </div>
+                <h3 class="text-3xl font-bold mb-2" style="color: var(--text-primary);">Welcome to Expensify</h3>
+                <p class="text-sm" style="color: var(--text-secondary);">Select your tracker type and login to continue</p>
+            </div>
+
+            <!-- Tracker Type Selection -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium mb-3 theme-text-secondary">Select Tracker Type</label>
+                <div class="grid grid-cols-2 gap-4">
+                    <button id="btn-personal" class="tracker-btn p-4 rounded-lg border-2 transition-all duration-300" style="background: linear-gradient(135deg, hsl(210, 15%, 22%) 0%, hsl(210, 10%, 18%) 100%); border-color: hsl(210, 20%, 35%);">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background-color: var(--accent-color); transition: all 0.3s ease;">
+                                <i data-lucide="user" class="w-5 h-5" style="color: var(--text-primary);"></i>
+                            </div>
+                            <div class="text-left">
+                                <div class="font-bold theme-text">Personal</div>
+                                <div class="text-xs theme-text-secondary">Track personal expenses</div>
+                            </div>
+                        </div>
+                    </button>
+                    <button id="btn-company" class="tracker-btn p-4 rounded-lg border-2 transition-all duration-300" style="background: linear-gradient(135deg, hsl(210, 15%, 22%) 0%, hsl(210, 10%, 18%) 100%); border-color: hsl(210, 20%, 35%);">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background-color: var(--accent-color); transition: all 0.3s ease;">
+                                <i data-lucide="building-2" class="w-5 h-5" style="color: var(--text-primary);"></i>
+                            </div>
+                            <div class="text-left">
+                                <div class="font-bold theme-text">Company</div>
+                                <div class="text-xs theme-text-secondary">Manage team expenses</div>
+                            </div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Role Selection (visible only for Company) -->
+            <div id="role-selection-section" class="mb-6 hidden">
+                <label class="block text-sm font-medium mb-3 theme-text-secondary">Select Your Role</label>
+                <div class="grid grid-cols-2 gap-4">
+                    <button id="btn-employee" class="role-btn p-4 rounded-lg border-2 transition-all duration-300" style="background: linear-gradient(135deg, hsl(210, 15%, 22%) 0%, hsl(210, 10%, 18%) 100%); border-color: hsl(210, 20%, 35%);">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background-color: var(--accent-color); transition: all 0.3s ease;">
+                                <i data-lucide="user-check" class="w-5 h-5" style="color: var(--text-primary);"></i>
+                            </div>
+                            <div class="text-left">
+                                <div class="font-bold theme-text">Employee</div>
+                                <div class="text-xs theme-text-secondary">Submit expenses</div>
+                            </div>
+                        </div>
+                    </button>
+                    <button id="btn-admin" class="role-btn p-4 rounded-lg border-2 transition-all duration-300" style="background: linear-gradient(135deg, hsl(210, 15%, 22%) 0%, hsl(210, 10%, 18%) 100%); border-color: hsl(210, 20%, 35%);">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background-color: var(--accent-color); transition: all 0.3s ease;">
+                                <i data-lucide="shield-check" class="w-5 h-5" style="color: var(--text-primary);"></i>
+                            </div>
+                            <div class="text-left">
+                                <div class="font-bold theme-text">Admin</div>
+                                <div class="text-xs theme-text-secondary">Approve expenses</div>
+                            </div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Login Form -->
+            <form id="auth-form" class="space-y-4">
+                <div class="space-y-3">
+                    <label class="block text-sm font-medium theme-text-secondary">Username</label>
+                    <input type="text" name="username" placeholder="Enter username" required class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg theme-text placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:border-transparent transition-all duration-300">
+                </div>
+                <div class="space-y-3">
+                    <label class="block text-sm font-medium theme-text-secondary">Password</label>
+                    <div class="relative">
+                        <input id="auth-password-input" type="password" name="password" placeholder="Enter password" required class="w-full px-4 py-3 pr-12 bg-white/10 border border-white/20 rounded-lg theme-text placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:border-transparent transition-all duration-300">
+                        <button type="button" id="toggle-password-visibility" class="absolute right-3 top-1/2 -translate-y-1/2 theme-text-muted hover:text-white transition-colors" onclick="togglePasswordVisibility()">
+                            <i id="password-eye-icon" data-lucide="eye" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="w-full theme-text font-bold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-xl" style="background: linear-gradient(135deg, hsl(210, 45%, 60%) 0%, hsl(210, 50%, 70%) 100%); box-shadow: 0 8px 24px rgba(100, 150, 200, 0.3);">
+                    <span id="auth-button-text">Login</span>
+                </button>
+                <div class="rounded-lg px-4 py-3 bg-white/5 text-center theme-text-secondary text-sm">
+                    <span class="mr-1">Need an account?</span>
+                    <span id="toggle-auth-mode" class="cursor-pointer font-semibold theme-text hover-accent">Create one</span>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Floating geometric shapes for visual interest -->
+    <!-- Decorative shapes removed for a cleaner, neutral UI -->
+
+    <div class="relative z-10 ml-64 px-6 pt-20 pb-8 max-w-7xl">
+        <!-- Dashboard Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6" id="dashboard-cards">
+        <div class="flex flex-col md:flex-row gap-6 w-full">
+            <!-- Income Card -->
+            <div class="flex-1 rounded-lg p-8 flex flex-col items-center shadow-sm card-hover animate-border-glow border-2 border-blue-400" style="background-color: var(--bg-secondary); transition: all 0.3s ease;">
+                <i data-lucide="wallet" class="w-8 h-8 mb-2" style="color: #10b981;"></i>
+                <div class="text-base font-medium" style="color: var(--text-secondary);">Income</div>
+                <div id="card-income" class="text-2xl font-bold mt-2" style="color: #10b981;">₹0.00</div>
+            </div>
+            <!-- Total Expenses Card -->
+            <div class="flex-1 rounded-lg p-8 flex flex-col items-center shadow-sm card-hover animate-border-glow border-2 border-blue-400" style="background-color: var(--bg-secondary); transition: all 0.3s ease;">
+                <i data-lucide="credit-card" class="w-8 h-8 mb-2" style="color: var(--accent-color);"></i>
+                <div class="text-base font-medium" style="color: var(--text-secondary);">Total Expenses</div>
+                <div id="card-total-expenses" class="text-2xl font-bold mt-2" style="color: var(--accent-color);">₹0.00</div>
+            </div>
+            <!-- Net Expense Card -->
+            <div class="flex-1 rounded-lg p-8 flex flex-col items-center shadow-sm card-hover animate-border-glow border-2 border-blue-400" style="background-color: var(--bg-secondary); transition: all 0.3s ease;">
+                <i data-lucide="activity" class="w-8 h-8 mb-2" style="color: var(--accent-color);"></i>
+                <div class="text-base font-medium" style="color: var(--text-secondary);">Net Expense</div>
+                <div id="card-net-expense" class="text-2xl font-bold mt-2" style="color: var(--accent-color);">₹0.00</div>
+            </div>
+        </div>
+        </div>
+
+
+        <!-- Smart Parsing Section (Moved Above Money Features) -->
+        <div class="rounded-lg p-8 mb-8 card-hover animate-border-glow" style="background-color: var(--bg-secondary); transition: all 0.3s ease;">
+            <h2 class="text-2xl font-bold mb-6 text-center flex items-center justify-center gap-2" style="color: var(--text-primary);">
+                <i data-lucide="bot" class="w-6 h-6"></i> Smart Expense Parser
+            </h2>
+            <div class="grid md:grid-cols-3 gap-6">
+                <button id="sms-parse-btn" class="theme-text font-bold py-4 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-xl card-hover" style="background-color: var(--accent-color); transition: all 0.3s ease;">
+                    <i data-lucide="smartphone" class="w-8 h-8 mb-2 mx-auto" style="color: var(--text-primary);"></i>
+                    <div class="text-lg font-bold">Parse SMS</div>
+                    <div class="text-sm opacity-80">Extract expenses from text messages</div>
+                </button>
+                
+                <button id="email-parse-btn" class="theme-text font-bold py-4 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-xl card-hover" style="background-color: var(--accent-color); transition: all 0.3s ease;">
+                    <i data-lucide="mail" class="w-8 h-8 mb-2 mx-auto" style="color: var(--text-primary);"></i>
+                    <div class="text-lg font-bold">Parse Email</div>
+                    <div class="text-sm opacity-80">Extract expenses from email receipts</div>
+                </button>
+                
+                <button id="load-sample-btn" onclick="loadSampleData()" class="theme-text font-bold py-4 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-xl card-hover" style="background-color: var(--accent-color); transition: all 0.3s ease;">
+                    <i data-lucide="database" class="w-8 h-8 mb-2 mx-auto" style="color: var(--text-primary);"></i>
+                    <div class="text-lg font-bold">Load Sample</div>
+                    <div class="text-sm opacity-80">Load demo expense data</div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Add Money Received & Net Expense Chart Cards (Personal Tracker Only) -->
+        <div id="money-features-section" class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-6" style="display: none;">
+            <!-- Add Money Received Form -->
+            <div class="rounded-lg p-8 card-hover animate-border-glow" style="background-color: var(--bg-secondary); transition: all 0.3s ease;">
+                <h2 class="text-2xl font-bold mb-6 flex items-center gap-2" style="color: var(--text-primary);">
+                    <i data-lucide="plus-circle" class="w-6 h-6" style="color: #10b981;"></i> Add Money Received
+                </h2>
+                <form id="money-received-form" class="space-y-4">
+
+                    <div class="flex items-center rounded-lg px-3 py-2 transition-all duration-200 shadow-inner shadow-black/20 hover:opacity-90 focus-within:ring-1 input-field">
+                        <i data-lucide="file-text" class="w-5 h-5 mr-2 flex-shrink-0" style="color: hsl(210, 10%, 85%); opacity: 0.7;"></i>
+                        <input type="text" name="source" placeholder="Source (e.g., Salary, Gift)" required class="w-full bg-transparent outline-none transition-all duration-200 font-normal placeholder:font-light" style="color: hsl(210, 10%, 85%);">
+                    </div>
+
+                    <div class="flex items-center rounded-lg px-3 py-2 transition-all duration-200 shadow-inner shadow-black/20 hover:opacity-90 focus-within:ring-1 input-field">
+                        <i data-lucide="tag" class="w-5 h-5 mr-2 flex-shrink-0" style="color: hsl(210, 10%, 85%); opacity: 0.7;"></i>
+                        <select name="category" required class="w-full bg-transparent outline-none transition-all duration-200 font-normal" style="color: hsl(210, 10%, 85%);">
+                            <option value="" disabled selected style="background-color: var(--bg-tertiary); transition: all 0.3s ease;">Select Category</option>
+                            <option value="Salary" style="background-color: var(--bg-tertiary); transition: all 0.3s ease;">Salary</option>
+                            <option value="Gift" style="background-color: var(--bg-tertiary); transition: all 0.3s ease;">Gift</option>
+                            <option value="Refund" style="background-color: var(--bg-tertiary); transition: all 0.3s ease;">Refund</option>
+                            <option value="Loan" style="background-color: var(--bg-tertiary); transition: all 0.3s ease;">Loan</option>
+                            <option value="Other" style="background-color: var(--bg-tertiary); transition: all 0.3s ease;">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center rounded-lg px-3 py-2 transition-all duration-200 shadow-inner shadow-black/20 hover:opacity-90 focus-within:ring-1 input-field">
+                        <i data-lucide="indian-rupee" class="w-5 h-5 mr-2 flex-shrink-0" style="color: hsl(210, 10%, 85%); opacity: 0.7;"></i>
+                        <input type="number" name="amount" placeholder="Amount Received (₹)" step="0.01" required class="w-full bg-transparent outline-none transition-all duration-200 font-normal placeholder:font-light" style="color: hsl(210, 10%, 85%);">
+                    </div>
+
+                    <div class="flex items-center rounded-lg px-3 py-2 transition-all duration-200 shadow-inner shadow-black/20 hover:opacity-90 focus-within:ring-1 input-field">
+                        <i data-lucide="calendar" class="w-5 h-5 mr-2 flex-shrink-0" style="color: hsl(210, 10%, 85%); opacity: 0.7;"></i>
+                        <input type="date" name="date" required class="w-full bg-transparent outline-none transition-all duration-200 font-normal" style="color: hsl(210, 10%, 85%);">
+                    </div>
+
+                    <button type="submit"
+                        class="w-full py-2 px-4 font-medium rounded-lg transition-colors shadow-lg hover:opacity-90 flex items-center justify-center gap-2" style="background-color: #10b981; transition: all 0.3s ease; color: white;">
+                        <i data-lucide="plus" class="w-5 h-5"></i>
+                        Add Money Received
+                    </button>
+                </form>
+            </div>
+
+            <!-- Net Expense Chart -->
+            <div class="rounded-lg p-8 card-hover animate-border-glow" style="background-color: var(--bg-secondary); transition: all 0.3s ease;">
+                <h2 class="text-2xl font-bold mb-6 flex items-center gap-2" style="color: var(--text-primary);">
+                    <i data-lucide="trending-down" class="w-6 h-6" style="color: var(--accent-color);"></i> Net Expense Trend
+                </h2>
+                <div class="relative h-80">
+                    <canvas id="netExpenseChart" class="w-full h-full"></canvas>
+                </div>
+                <div class="mt-4 text-sm text-center" style="color: hsl(210, 10%, 70%);">
+                    Shows your net spending (expenses - money received) over time
+                </div>
+            </div>
+        </div>
+
+        <div class="grid lg:grid-cols-2 gap-8">
+            <!-- Manual Entry Section -->
+            <div class="rounded-lg p-8 card-hover animate-border-glow" style="background-color: var(--bg-secondary); transition: all 0.3s ease;">
+                <h2 class="text-2xl font-bold mb-6 flex items-center gap-2" style="color: var(--text-primary);">
+                    <i data-lucide="edit-3" class="w-6 h-6"></i> Manual Entry
+                </h2>
+                <form id="expense-form" class="space-y-4">
+                    <div class="flex items-center rounded-lg px-3 py-2 transition-all duration-200 shadow-inner shadow-black/20 hover:opacity-90 focus-within:ring-1 input-field">
+                        <i data-lucide="file-text" class="w-5 h-5 mr-2 flex-shrink-0" style="color: hsl(210, 10%, 85%); opacity: 0.7;"></i>
+                        <input type="text" name="name" placeholder="Expense Name" required class="w-full bg-transparent outline-none transition-all duration-200 font-normal placeholder:font-light" style="color: hsl(210, 10%, 85%);">
+                    </div>
+                    
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="flex items-center rounded-lg px-3 py-2 transition-all duration-200 shadow-inner shadow-black/20 hover:opacity-90 focus-within:ring-1 input-field">
+                            <i data-lucide="indian-rupee" class="w-5 h-5 mr-2 flex-shrink-0" style="color: hsl(210, 10%, 85%); opacity: 0.7;"></i>
+                            <input type="number" name="amount" placeholder="Amount (₹)" step="0.01" required class="w-full bg-transparent outline-none transition-all duration-200 font-normal placeholder:font-light" style="color: hsl(210, 10%, 85%);">
+                        </div>
+                        
+                        <div class="flex items-center rounded-lg px-3 py-2 transition-all duration-200 shadow-inner shadow-black/20 hover:opacity-90 focus-within:ring-1 input-field">
+                            <i data-lucide="tag" class="w-5 h-5 mr-2 flex-shrink-0" style="color: hsl(210, 10%, 85%); opacity: 0.7;"></i>
+                            <select name="category" required class="w-full bg-transparent outline-none transition-all duration-200 font-normal" style="color: hsl(210, 10%, 85%);">
+                                <option value="" disabled selected style="background-color: var(--bg-tertiary); transition: all 0.3s ease;">Select Category</option>
+                                <option value="Food" style="background-color: var(--bg-tertiary); transition: all 0.3s ease;">Food</option>
+                                <option value="Transport" style="background-color: var(--bg-tertiary); transition: all 0.3s ease;">Transport</option>
+                                <option value="Bills" style="background-color: var(--bg-tertiary); transition: all 0.3s ease;">Bills</option>
+                                <option value="Entertainment" style="background-color: var(--bg-tertiary); transition: all 0.3s ease;">Entertainment</option>
+                                <option value="Other" style="background-color: var(--bg-tertiary); transition: all 0.3s ease;">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center rounded-lg px-3 py-2 transition-all duration-200 shadow-inner shadow-black/20 hover:opacity-90 focus-within:ring-1 input-field">
+                        <i data-lucide="calendar" class="w-5 h-5 mr-2 flex-shrink-0" style="color: hsl(210, 10%, 85%); opacity: 0.7;"></i>
+                        <input type="date" name="date" required class="w-full bg-transparent outline-none transition-all duration-200 font-normal" style="color: hsl(210, 10%, 85%);">
+                    </div>
+                    
+            <button type="submit" 
+                class="w-full py-2 px-4 font-medium rounded-lg transition-colors shadow-lg hover:opacity-90" style="background-color: var(--accent-color); transition: all 0.3s ease; color: hsl(210, 10%, 85%);">
+                        <span class="flex items-center justify-center">
+                            <i data-lucide="plus" class="w-5 h-5 mr-2"></i>
+                            Add Expense
+                        </span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Chart Section -->
+            <div class="rounded-lg p-8 card-hover animate-border-glow" style="background-color: var(--bg-secondary); transition: all 0.3s ease;">
+                <h2 class="text-2xl font-bold mb-6 flex items-center gap-2" style="color: var(--text-primary);">
+                    <i data-lucide="pie-chart" class="w-6 h-6"></i> Expense Breakdown
+                </h2>
+                <div class="relative h-80">
+                    <canvas id="chart" class="w-full h-full"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- NEW FEATURES SECTION -->
+        
+        <!-- Monthly Trend & Budget Section -->
+        <div class="grid lg:grid-cols-2 gap-8 mt-8">
+            <!-- Monthly Expense Trend Chart -->
+            <div class="rounded-lg p-8 card-hover animate-border-glow" style="background-color: var(--bg-secondary); transition: all 0.3s ease;">
+                <h2 class="text-2xl font-bold mb-6 flex items-center gap-2" style="color: var(--text-primary);">
+                    <i data-lucide="trending-up" class="w-6 h-6"></i> Monthly Trend
+                </h2>
+                <div class="relative h-80">
+                    <canvas id="trendChart" class="w-full h-full"></canvas>
+                </div>
+            </div>
+
+            <!-- Budget Tracker -->
+            <div class="rounded-lg p-8 card-hover animate-border-glow" style="background-color: var(--bg-secondary); transition: all 0.3s ease;">
+                <h2 class="text-2xl font-bold mb-6 flex items-center gap-2" style="color: var(--text-primary);">
+                    <i data-lucide="target" class="w-6 h-6"></i> Budget Tracker
+                </h2>
+                
+                <!-- Budget Setting -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium mb-2" style="color: hsl(210, 10%, 85%);">Monthly Budget</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="budgetInput" placeholder="Set budget limit" class="flex-1 rounded-lg px-4 py-2 transition-all duration-200 shadow-inner shadow-black/20" style="background-color: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary); transition: all 0.3s ease;" />
+                        <button onclick="setBudget()" class="px-6 py-2 rounded-lg font-bold transition-all duration-300 transform hover:scale-105" style="background-color: var(--accent-color); transition: all 0.3s ease; color: white;">
+                            Set Budget
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Budget Progress -->
+                <div class="space-y-4">
+                    <div>
+                        <div class="flex justify-between text-sm mb-2" style="color: hsl(210, 10%, 85%);">
+                            <span>Current Month Spending</span>
+                            <span id="budgetPercentage">0%</span>
+                        </div>
+                        <div class="w-full h-4 rounded-full" style="background-color: hsl(210, 10%, 25%);">
+                            <div id="budgetBar" class="h-full rounded-full transition-all duration-500" style="width: 0%; background: linear-gradient(90deg, hsl(142, 76%, 36%), hsl(45, 93%, 47%), hsl(0, 84%, 60%));"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 mt-4">
+                        <div class="p-4 rounded-lg" style="background-color: hsl(210, 10%, 15%);">
+                            <div class="text-sm" style="color: hsl(210, 10%, 70%);">Budget Limit</div>
+                            <div id="budgetLimit" class="text-xl font-bold mt-1" style="color: hsl(210, 45%, 60%);">₹0</div>
+                        </div>
+                        <div class="p-4 rounded-lg" style="background-color: hsl(210, 10%, 15%);">
+                            <div class="text-sm" style="color: hsl(210, 10%, 70%);">Remaining</div>
+                            <div id="budgetRemaining" class="text-xl font-bold mt-1" style="color: hsl(142, 76%, 36%);">₹0</div>
+                        </div>
+                    </div>
+
+                    <!-- Budget Alert -->
+                    <div id="budgetAlert" class="hidden p-4 rounded-lg" style="background-color: hsl(0, 84%, 60%); color: white;">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                            <span class="font-bold">Budget Alert!</span>
+                        </div>
+                        <p class="text-sm mt-2">You've exceeded your monthly budget limit.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Categories & Comparison -->
+        <div class="grid lg:grid-cols-2 gap-8 mt-8">
+            <!-- Top Spending Categories -->
+            <div class="rounded-lg p-8 card-hover animate-border-glow" style="background-color: var(--bg-secondary); transition: all 0.3s ease;">
+                <h2 class="text-2xl font-bold mb-6 flex items-center gap-2" style="color: var(--text-primary);">
+                    <i data-lucide="bar-chart-3" class="w-6 h-6"></i> Top Categories
+                </h2>
+                <div id="topCategories" class="space-y-4">
+                    <!-- Top categories will be populated here -->
+                </div>
+            </div>
+
+            <!-- Monthly Comparison -->
+            <div class="rounded-lg p-8 card-hover animate-border-glow" style="background-color: var(--bg-secondary); transition: all 0.3s ease;">
+                <h2 class="text-2xl font-bold mb-6 flex items-center gap-2" style="color: var(--text-primary);">
+                    <i data-lucide="calendar" class="w-6 h-6"></i> Month Comparison
+                </h2>
+                <div class="relative h-64">
+                    <canvas id="comparisonChart" class="w-full h-full"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search & Filter Section -->
+        <div class="mt-8 rounded-lg p-8 card-hover animate-border-glow" style="background-color: var(--bg-secondary); transition: all 0.3s ease;">
+            <div class="flex flex-col md:flex-row gap-4 items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold flex items-center gap-2" style="color: var(--text-primary);">
+                    <i data-lucide="filter" class="w-6 h-6"></i> Search & Filter
+                </h2>
+                <div class="flex gap-2">
+                    <button onclick="exportToCSV()" class="px-4 py-2 rounded-lg font-bold transition-all duration-300 transform hover:scale-105 flex items-center gap-2" style="background-color: hsl(142, 76%, 36%); color: white;">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        Export CSV
+                    </button>
+                    <button onclick="exportToPDF()" class="px-4 py-2 rounded-lg font-bold transition-all duration-300 transform hover:scale-105 flex items-center gap-2" style="background-color: hsl(0, 84%, 60%); color: white;">
+                        <i data-lucide="file-text" class="w-4 h-4"></i>
+                        Export PDF
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filter Controls -->
+            <div class="grid md:grid-cols-4 gap-4 mb-6">
+                <div>
+                    <label class="block text-sm font-medium mb-2" style="color: hsl(210, 10%, 85%);">Search</label>
+                    <input type="text" id="searchInput" placeholder="Search expenses..." oninput="filterExpenses()" class="w-full rounded-lg px-4 py-2 transition-all duration-200 shadow-inner shadow-black/20" style="background-color: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary); transition: all 0.3s ease;" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2" style="color: hsl(210, 10%, 85%);">Category</label>
+                    <select id="filterCategory" onchange="filterExpenses()" class="w-full rounded-lg px-4 py-2 transition-all duration-200" style="background-color: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary); transition: all 0.3s ease;">
+                        <option value="">All Categories</option>
+                        <option value="Food">Food</option>
+                        <option value="Transport">Transport</option>
+                        <option value="Bills">Bills</option>
+                        <option value="Entertainment">Entertainment</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2" style="color: hsl(210, 10%, 85%);">From Date</label>
+                    <input type="date" id="filterFromDate" onchange="filterExpenses()" class="w-full rounded-lg px-4 py-2 transition-all duration-200" style="background-color: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary); transition: all 0.3s ease;" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2" style="color: hsl(210, 10%, 85%);">To Date</label>
+                    <input type="date" id="filterToDate" onchange="filterExpenses()" class="w-full rounded-lg px-4 py-2 transition-all duration-200" style="background-color: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary); transition: all 0.3s ease;" />
+                </div>
+            </div>
+            
+            <button onclick="clearFilters()" class="px-4 py-2 rounded-lg font-bold transition-all duration-300" style="background-color: var(--bg-tertiary); color: var(--text-primary); transition: all 0.3s ease;">
+                Clear Filters
+            </button>
+        </div>
+
+        <!-- Expenses Table -->
+        <div class="mt-8 rounded-lg p-8 card-hover animate-border-glow" style="background-color: var(--bg-secondary); transition: all 0.3s ease;">
+            <h2 class="text-2xl font-bold mb-6 flex items-center gap-2" style="color: var(--text-primary);">
+                <i data-lucide="list" class="w-6 h-6"></i> Recent Expenses
+            </h2>
+            <div class="overflow-x-auto">
+                <table class="w-full" style="color: hsl(210, 10%, 85%);">
+                    <thead>
+                        <tr style="border-bottom: 1px solid hsl(210, 10%, 30%);">
+                            <th class="text-left py-4 px-4 font-semibold">Name</th>
+                            <th class="text-left py-4 px-4 font-semibold">Amount</th>
+                            <th class="text-left py-4 px-4 font-semibold">Category</th>
+                            <th class="text-left py-4 px-4 font-semibold">Date</th>
+                            <th class="text-center py-4 px-4 font-semibold">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="expense-list" style="border-color: hsl(210, 10%, 30%);">
+                        <!-- Expenses will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Money Received Table -->
+        <div class="mt-8 rounded-lg p-8 card-hover animate-border-glow" style="background-color: var(--bg-secondary); transition: all 0.3s ease;">
+            <h2 class="text-2xl font-bold mb-6 flex items-center gap-2" style="color: var(--text-primary);">
+                <i data-lucide="indian-rupee" class="w-6 h-6"></i> Money Received
+            </h2>
+            <div class="overflow-x-auto">
+                <table class="w-full" style="color: hsl(210, 10%, 85%);">
+                    <thead>
+                        <tr style="border-bottom: 1px solid hsl(210, 10%, 30%);">
+                            <th class="text-left py-4 px-4 font-semibold">Source</th>
+                            <th class="text-left py-4 px-4 font-semibold">Category</th>
+                            <th class="text-left py-4 px-4 font-semibold">Amount</th>
+                            <th class="text-left py-4 px-4 font-semibold">Date</th>
+                            <th class="text-center py-4 px-4 font-semibold">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="money-received-list" style="border-color: hsl(210, 10%, 30%);">
+                        <!-- Money received entries will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for SMS/Email Parsing -->
+    <div id="parse-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+        <div class="glass-morphism rounded-lg p-8 m-4 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div class="flex items-start justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background-color: var(--accent-color); transition: all 0.3s ease;">
+                        <i data-lucide="bot" class="w-5 h-5" style="color: hsl(210, 10%, 92%);"></i>
+                    </div>
+                    <div>
+                        <h3 id="modal-title" class="text-2xl font-bold" style="color: hsl(210, 10%, 95%);"></h3>
+                        <p class="theme-text-secondary text-sm">Paste your content below and let the parser work its magic</p>
+                    </div>
+                </div>
+                <button id="close-modal" class="theme-text-secondary hover:text-white text-2xl font-bold leading-none">×</button>
+            </div>
+            <div class="mb-6 space-y-2">
+                <label for="parse-input" class="block text-sm font-medium theme-text-secondary">Content</label>
+                <textarea id="parse-input"
+                          placeholder="Paste your SMS or email content here..."
+                          class="w-full h-48 px-4 py-4 bg-white/10 border border-white/15 rounded-lg theme-text placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[hsl(210,45%,60%)] focus:border-transparent transition-all duration-300 resize-none shadow-inner"></textarea>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-4">
+                <button id="analyze-btn"
+                        class="flex-1 font-bold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
+                        style="background-color: var(--accent-color); transition: all 0.3s ease; color: white;">
+                    <span class="flex items-center justify-center gap-2" style="color: var(--text-primary);">
+                        <i data-lucide="sparkles" class="w-5 h-5" style="color: var(--text-primary);"></i>
+                        Analyze & Extract
+                    </span>
+                </button>
+                <button id="cancel-btn"
+                        class="flex-1 px-6 py-3 bg-white/10 hover:bg-white/20 theme-text font-semibold rounded-lg transition-all duration-300">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirm-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+        <div class="glass-morphism rounded-lg p-8 m-4 max-w-md w-full">
+            <div class="flex items-center gap-3 mb-4">
+                <i id="confirm-icon" data-lucide="alert-triangle" class="w-6 h-6" style="color: hsl(20, 90%, 60%);"></i>
+                <h3 id="confirm-title" class="text-2xl font-bold" style="color: hsl(210, 10%, 90%);">Confirm Action</h3>
+            </div>
+            <p id="confirm-message" class="theme-text mb-6 leading-relaxed">
+                Are you sure you want to delete this expense? This action can’t be undone.
+            </p>
+            <div class="flex gap-4">
+                <button id="confirm-cancel" class="flex-1 px-6 py-3 bg-white/10 hover:bg-white/20 theme-text font-semibold rounded-lg transition-all duration-300">
+                    Cancel
+                </button>
+                <button id="confirm-accept" class="flex-1 accent-btn theme-text font-bold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105" style="background-color: hsl(0, 80%, 55%);">
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+
+    <script>
+        // Initialize Lucide icons after page load
+        function initializeLucideIcons() {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+                console.log('Lucide icons initialized');
+            } else {
+                console.error('Lucide library not loaded');
+            }
+        }
+        
+        // Initialize on DOM content loaded
+        document.addEventListener('DOMContentLoaded', initializeLucideIcons);
+        
+        // Also try after a short delay in case DOM is already loaded
+        setTimeout(initializeLucideIcons, 100);
+        
+        // Make function globally available for dynamic content
+        window.initializeLucideIcons = initializeLucideIcons;
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+

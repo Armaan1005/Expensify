@@ -1,0 +1,8 @@
+<servlet>
+  <servlet-name>ExpenseServlet</servlet-name>
+  <servlet-class>ExpenseServlet</servlet-class>
+</servlet>
+<servlet-mapping>
+  <servlet-name>ExpenseServlet</servlet-name>
+  <url-pattern>/expense</url-pattern>
+</servlet-mapping>
